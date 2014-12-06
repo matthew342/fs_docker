@@ -1,34 +1,68 @@
 FROM debian:wheezy
 
-ENV FREESWITCH_PATH /usr/local/freeswitch
-ENV FREESWITCH_SRC_PATH /usr/local/src/freeswitch
+RUN echo 'deb http://ftp.us.debian.org/debian/ wheezy main' >> /etc/apt/sources.list &&\
+    echo 'deb http://security.debian.org/ wheezy/updates main' >> /etc/apt/sources.list &&\
+    apt-get -y --quiet update && apt-get -y --quiet upgrade && apt-get -y --quiet install git curl &&\
+    echo 'deb http://files.freeswitch.org/repo/deb/debian/ wheezy main' >> /etc/apt/sources.list.d/freeswitch.list &&\
+    curl http://files.freeswitch.org/repo/deb/debian/freeswitch_archive_g0.pub | apt-key add -
 
-ENV 	DEBIAN_FRONTEND noninteractive
-WORKDIR /usr/local/src
-COPY	modules.conf /tmp/modules.conf
+RUN apt-get -y --quiet update && apt-get -y --quiet install freeswitch
+		freeswitch-mod-commands \
+		freeswitch-mod-conference \
+		freeswitch-mod-db \
+		freeswitch-mod-dptools \
+		freeswitch-mod-enum \
+		freeswitch-mod-esf \
+		freeswitch-mod-expr \
+		freeswitch-mod-fifo \
+		freeswitch-mod-fsv \
+		freeswitch-mod-hash \
+		freeswitch-mod-httapi \
+		freeswitch-mod-sms \
+		freeswitch-mod-spandsp \
+		freeswitch-mod-valet-parking \
+		freeswitch-mod-voicemail \
+		freeswitch-mod-amr \
+		freeswitch-mod-bv \
+		freeswitch-mod-b64 \
+		freeswitch-mod-g723-1 \
+		freeswitch-mod-g729 \
+		freeswitch-mod-h26x \
+		freeswitch-mod-vp8 \
+		freeswitch-mod-opus \
+		freeswitch-mod-dialplan-xml \
+		freeswitch-mod-rtc \
+		freeswitch-mod-verto \
+		freeswitch-mod-loopback \
+		freeswitch-mod-skinny \
+		freeswitch-mod-sofia \
+		freeswitch-mod-cdr-csv \
+		freeswitch-mod-event-socket \
+		freeswitch-mod-local-stream \
+		freeswitch-mod-native-file \
+		freeswitch-mod-sndfile \
+		freeswitch-mod-tone-stream \
+		freeswitch-mod-lua \
+		freeswitch-mod-console \
+		freeswitch-mod-logfile \
+		freeswitch-mod-syslog \
+		freeswitch-mod-say-en \
+		freeswitch-mod-xml-rpc \
+		freeswtich-mod-xml-scgi \
+		\
+		freeswitch-mod-xml-curl \
+		freeswitch-mod-flite \
+		freeswitch-mod-directory \
+		&& apt-get clean
+		
+ENV FREESWITCH_PATH /etc/freeswitch
 
-RUN 	BUILD_DEPS="autoconf automake devscripts libtool make git-core g++" && \
-	apt-get update && apt-get install -y --no-install-recommends $BUILD_DEPS  \
-		gawk python-dev gawk pkg-config libtiff5-dev libperl-dev libgdbm-dev libdb-dev gettext libssl-dev \
-		libcurl4-openssl-dev libpcre3-dev libspeex-dev libspeexdsp-dev libsqlite3-dev libedit-dev libldns-dev libpq-dev && \
-	env GIT_SSL_NO_VERIFY=true git clone -b v1.4 https://freeswitch.org/stash/scm/fs/freeswitch.git && \
-	cd /usr/local/src/freeswitch && \
-	./bootstrap.sh -j && \
-	# replace the standard modules.conf with your custom file
-	cp -f /tmp/modules.conf ./modules.conf && \
-	./configure --enable-core-pgsql-support && \
-	make && make install && \
-	rm -r -f /usr/local/src/ && \
-	apt-get -f -y install && \
-	apt-get purge -y $BUILD_DEPS && \
-    	apt-get autoremove -y
+# RUN useradd --system --home-dir ${FREESWITCH_PATH} --comment "FreeSWITCH Voice Platform" --groups daemon freeswitch && \
+        chown -R freeswitch:daemon ${FREESWITCH_PATH} && \
+        chmod -R ug=rwX,o= ${FREESWITCH_PATH} && \
+        chmod -R u=rwx,g=rx ${FREESWITCH_PATH}/bin/*
 
-ENV 	DEBIAN_FRONTEND dialog && \
-ENV PATH ${FREESWITCH_PATH}/bin:$PATH
+VOLUME ["/conf"]
+#VOLUME ["/sounds", "/certs", "/logs", "/db", "/conf"]
 
-RUN useradd --system --home-dir ${FREESWITCH_PATH} --comment "FreeSWITCH Voice Platform" --groups daemon freeswitch && \
-  	chown -R freeswitch:daemon ${FREESWITCH_PATH} && \
-  	chmod -R ug=rwX,o= ${FREESWITCH_PATH} && \
-  	chmod -R u=rwx,g=rx ${FREESWITCH_PATH}/bin/*
-
-CMD  ${FREESWITCH_PATH}/bin/freeswitch
+CMD ["/usr/bin/freeswitch", "-c", "-sounds", "/sounds", "-certs", "/certs", "-log", "/logs", "-conf", "/conf", "-db", "/db"]
