@@ -62,7 +62,6 @@ ENV FREESWITCH_PATH /etc/freeswitch
         chmod -R ug=rwX,o= ${FREESWITCH_PATH} && \
         chmod -R u=rwx,g=rx ${FREESWITCH_PATH}/bin/*
 
-VOLUME ["/conf"]
-#VOLUME ["/sounds", "/certs", "/logs", "/db", "/conf"]
+VOLUME ["/voip"]
 
-CMD ["/usr/bin/freeswitch", "-c", "-sounds", "/sounds", "-certs", "/certs", "-log", "/logs", "-conf", "/conf", "-db", "/db"]
+CMD ["/usr/bin/freeswitch", "-c", "-sounds", "/voip/sounds", "-certs", "/voip/certs", "-log", "/voip/logs", "-conf", "/voip/conf", "-db", "/voip/db"]
